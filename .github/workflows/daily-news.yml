@@ -1,0 +1,66 @@
+name: Daily news pipeline
+
+# Runs ingestion (RSS + library digest merge) and Gemini tagging every
+# day, then commits the resulting data/ files back to the repo so the
+# static site (built next) can read them.
+#
+# Timing: Apps Script pushes the library digest to data/raw/ sometime
+# between 10:00-11:00 AM IST (whenever the email actually arrives).
+# This workflow runs at 06:00 UTC = 11:30 AM IST, giving a half-hour
+# buffer so the digest file is reliably there before ingest.py looks
+# for it. If the digest hasn't landed yet on a given day, ingest.py
+# still runs fine — it just produces RSS-only output for that day
+# (same graceful fallback already built into the script).
+#
+# One-time setup required in the repo:
+#   Settings > Secrets and variables > Actions > New repository secret
+#     name: GEMINI_API_KEY
+#     value: your free key from aistudio.google.com/apikey
+#
+# No Gmail credentials needed here at all — Apps Script (running
+# separately, inside your own Google account) handles that part and
+# just pushes its output as a file, which this workflow reads locally
+# from the checked-out repo.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1-6"  # 06:00 UTC = 11:30 AM IST, Mon-Sat (skip Sunday, matching the digest email's own schedule)
+  workflow_dispatch: {}      # lets you manually trigger a run from the Actions tab, for testing
+
+permissions:
+  contents: write  # needed so this workflow can commit the day's output back to the repo
+
+jobs:
+  ingest-and-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install feedparser beautifulsoup4 requests trafilatura
+
+      - name: Run ingestion (RSS + library digest merge)
+        run: python ingest.py
+
+      - name: Run Gemini tagging
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python tag_articles.py
+
+      - name: Commit and push today's output
+        run: |
+          git config user.name "mdi-news-app-bot"
+          git config user.email "actions@github.com"
+          git add data/
+          # Only commit if something actually changed (avoids empty commits
+          # on days where, for some reason, nothing new came through)
+          git diff --staged --quiet || git commit -m "Daily news data: $(date -u +'%Y-%m-%d')"
+          git push
