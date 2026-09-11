@@ -1,0 +1,24 @@
+{
+  "name": "Brief — MDI Daily Business News",
+  "short_name": "Brief",
+  "description": "Daily business news digest for the MDI cohort, swipeable card feed by specialization.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0F1B2B",
+  "theme_color": "#0F1B2B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

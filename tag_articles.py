@@ -205,7 +205,14 @@ def main():
     out_path = out_dir / f"{today_str}.json"
     out_path.write_text(json.dumps(tagged, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(f"\nDone. {len(tagged)} tagged articles written to {out_path}")
+    # Also write a stable "latest.json" — the static site fetches this
+    # fixed filename rather than guessing today's date client-side,
+    # which avoids timezone mismatches between the site visitor's clock
+    # and whenever the pipeline actually ran.
+    latest_path = out_dir / "latest.json"
+    latest_path.write_text(json.dumps(tagged, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    print(f"\nDone. {len(tagged)} tagged articles written to {out_path} and {latest_path}")
 
 
 if __name__ == "__main__":
