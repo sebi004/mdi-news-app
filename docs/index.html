@@ -320,7 +320,12 @@ const updatedLabel = document.getElementById('updatedLabel');
 
 async function loadArticles(){
   try {
-    const resp = await fetch('data/tagged/latest.json', { cache: 'no-store' });
+    // docs/ (this site's root on GitHub Pages) and data/ (where the
+    // pipeline writes) are sibling folders in the repo, not nested —
+    // so we fetch via the raw GitHub content URL rather than a
+    // relative path, which would incorrectly look for docs/data/...
+    const DATA_URL = 'https://raw.githubusercontent.com/sebi004/mdi-news-app/main/data/tagged/latest.json';
+    const resp = await fetch(DATA_URL, { cache: 'no-store' });
     if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
     ARTICLES = await resp.json();
 
